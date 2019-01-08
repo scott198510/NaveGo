@@ -79,20 +79,20 @@ MS2KMH = 3.6;       % m/s to km/h
 % Reference dataset was obtained by processing IMU Ekinox and D-GNSS Ekinox
 % with tighly-coupled integration by Inertial Explorer software.
 
-fprintf('Loading reference data... \n')
+fprintf('NaveGo: loading reference data... \n')
 
 load ref
 
 %% EKINOX IMU 
 
-fprintf('Loading Ekinox IMU data... \n')
+fprintf('NaveGo: loading Ekinox IMU data... \n')
 
 load imu
 
 
 %% EKINOX GNSS 
 
-fprintf('Loading Ekinox GNSS data... \n')
+fprintf('NaveGo: loading Ekinox GNSS data... \n')
 
 load gnss
 
