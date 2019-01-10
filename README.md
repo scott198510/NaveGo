@@ -472,7 +472,7 @@ end
 
 ```
 
-### Print on console RMSE from IMU1
+### Print on console RMSE from INS/GNSS IMU1
 
 ```matlab
 
@@ -480,7 +480,7 @@ print_rmse (nav1_ref, gnss_ref, ref_1, ref_g, 'INS/GNSS IMU1');
 
 ```
 
-### Print on console RMSE from IMU2
+### Print on console RMSE from INS/GNSS IMU2
 
 ```matlab
 
