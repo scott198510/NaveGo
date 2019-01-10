@@ -493,10 +493,10 @@ print_rmse (nav2_ref, gnss_ref, ref_2, ref_g, 'INS/GNSS IMU2');
 * R. Gonzalez, J.I. Giribet, and H.D. Patiño. NaveGo: a simulation framework for low-cost integrated navigation systems, Journal of Control Engineering and Applied Informatics, vol. 17, issue 2, pp. 110-120, 2015. [Download](http://ceai.srait.ro/index.php?journal=ceai&page=article&op=view&path%5B%5D=2478).
 
 * Analog Devices. ADIS16400/ADIS16405 datasheet. High Precision Tri-Axis Gyroscope, Accelerometer, Magnetometer. Rev. B. 
-http://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16400_16405.pdf
+[Download](http://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16400_16405.pdf).
 
 * Analog Devices. ADIS16488 datasheet. Tactical Grade Ten Degrees of Freedom Inertial Sensor. Rev. G. 
-http://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16488.pdf
+[Download](http://www.analog.com/media/en/technical-documentation/data-sheets/ADIS16488.pdf).
 
 * Garmin International, Inc. GPS 18x TECHNICAL SPECIFICATIONS. Revision D. October 2011. 
-http://static.garmin.com/pumac/GPS_18x_Tech_Specs.pdf
+[Download](http://static.garmin.com/pumac/GPS_18x_Tech_Specs.pdf).
