@@ -5,10 +5,10 @@ function [qua, DCMbn, euler] = att_update(wb, DCMbn, qua, omega_ie_n, omega_en_n
 %   wb,         3x1 incremental turn-rates in body-frame (rad/s).
 %   DCMbn,      3x3 body-to-nav DCM.
 %   qua,        4x1 quaternion.
-%   omega_ie_n, 3x3 skew-symmetric Earth rate matrix (rad/s).
-%   omega_en_n, 3x3 skew-symmetric transport rate (rad/s).
+%   omega_ie_n, 3x1 Earth rate (rad/s).
+%   omega_en_n, 3x1 Transport rate (rad/s).
 %   dt,         1x1 IMU sampling interval (s).
-%	att_mode,   attitude mode (string).
+%	att_mode,   attitude mode string.
 %      'quaternion': attitude updated as quaternion. Default value.
 %             'dcm': attitude updated as Direct Cosine Matrix.
 %
@@ -37,16 +37,12 @@ function [qua, DCMbn, euler] = att_update(wb, DCMbn, qua, omega_ie_n, omega_en_n
 %
 % Reference:
 %
-%	Titterton, D.H. and Weston, J.L. (2004). Strapdown
-% Inertial Navigation Technology (2nd Ed.). Institution
-% of Engineering and Technology, USA.
-%
 %	Crassidis, J.L. and Junkins, J.L. (2011). Optimal Esti-
 % mation of Dynamic Systems, 2nd Ed. Chapman and Hall/CRC, USA.
 % Eq. 7.39, p. 458.
 %
-% Version: 004
-% Date:    2022/03/06
+% Version: 003
+% Date:    2016/11/26
 % Author:  Rodrigo Gonzalez <rodralez@frm.utn.edu.ar>
 % URL:     https://github.com/rodralez/navego
 
@@ -54,9 +50,7 @@ if nargin < 7, att_mode  = 'quaternion'; end
 
 %% Gyros output correction for Earth and transport rates
 
-om_ie_n = skewm_inv(omega_ie_n);
-om_en_n = skewm_inv(omega_en_n);
-wb = (wb - DCMbn' * (om_ie_n + om_en_n));                       % Titterton, Eq. 3.29, p. 32
+wb = ( wb - DCMbn' * (omega_ie_n + omega_en_n));
 
 if strcmp(att_mode, 'quaternion')
 %% Quaternion update   
@@ -71,7 +65,7 @@ elseif strcmp(att_mode, 'dcm')
     
     delta_theta = wb * dt;                  % Incremental Euler angles 
     DCMbn = dcm_update(DCMbn, delta_theta); % DCM update
-    euler = dcm2euler(DCMbn);               % Euler angles update
+    euler = dcm2euler(DCMbn);               % Euler anglesupdate
     qua   = euler2qua(euler);               % Quaternion update
     qua   = qua / norm(qua);                % Brute-force normalization
     
