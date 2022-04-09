@@ -5,7 +5,7 @@ function omega_ie_n = earth_rate(lat)
 %	lat, 1x1 latitude (rad).
 %
 % OUTPUT
-%	omega_ie_n, 3x3 skew-symmetric Earth rate matrix (rad/s).
+%	omega_ie_n, 3x3 earth rate (rad/s).
 %
 %   Copyright (C) 2014, Rodrigo Gonzalez, all rights reserved. 
 %     
@@ -36,6 +36,4 @@ function omega_ie_n = earth_rate(lat)
 % Author:  Rodrigo Gonzalez <rodralez@frm.utn.edu.ar>
 % URL:     https://github.com/rodralez/navego 
 
-omega_ie_n = (7.2921155e-5) .* [0 sin(lat) 0; ...
-                                -sin(lat) 0  -cos(lat); ...
-                                0 cos(lat) 0 ; ]; 
+omega_ie_n = (7.2921155e-5) .* [cos(lat), 0, -sin(lat)]'; 
