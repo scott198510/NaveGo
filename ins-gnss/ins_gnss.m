@@ -96,17 +96,14 @@ function [nav_e] = ins_gnss(imu, gnss, att_mode)
 %
 %   Groves, P.D. (2013), Principles of GNSS, Inertial, and
 % Multisensor Integrated Navigation Systems (2nd Ed.). Artech House.
-%
-%   Crassidis, J.L. and Junkins, J.L. (2011). Optimal Esti-
-% mation of Dynamic Systems, 2nd Ed. Chapman and Hall/CRC, USA.
-%
+
 %   ZUPT algothim based on Groves, Chapter 15, "INS Alignment, Zero Updates,
 % and Motion Constraints".
 %
 %   ins_gps.m, ins_gnss function is based on that previous NaveGo function.
 %
-% Version: 011
-% Date:    2022/04/0
+% Version: 009
+% Date:    2021/03/16
 % Author:  Rodrigo Gonzalez <rodralez@frm.utn.edu.ar>
 % URL:     https://github.com/rodralez/navego
 
@@ -194,8 +191,11 @@ kf.Pi = diag([imu.ini_align_err, gnss.stdv, gnss.std, imu.gb_dyn, imu.ab_dyn].^2
 
 kf.Q  = diag([imu.arw, imu.vrw, imu.gb_psd, imu.ab_psd].^2);
 
-fn = DCMbn * (imu.fb(1,:)' - ab_dyn - imu.ab_sta');
-wn = DCMbn * (imu.wb(1,:)' - gb_dyn - imu.gb_sta');
+fb_corrected = imu.fb(1,:)' - ab_dyn - imu.ab_sta';  % 3x1
+wb_corrected = imu.wb(1,:)' - gb_dyn - imu.gb_sta';  % 3x1
+
+fn = DCMbn * fb_corrected;  % 3x1
+wn = DCMbn * wb_corrected;  % 3x1
 
 % Vector to update matrix F
 upd = [gnss.vel(1,:) gnss.lat(1) gnss.h(1) fn' wn'];
@@ -225,10 +225,10 @@ S(1,:)  = reshape(kf.S, 1, r^2);
 v(1,:)  = kf.v';
 z(1,:)  = kf.z';
 b(1,:) = [gb_dyn', ab_dyn'];
+kf.Pi
 
 %% INS (IMU) TIME IS THE MASTER CLOCK
 for i = 2:LI
-    
     %% INERTIAL NAVIGATION SYSTEM (INS)
     
     % Print a dot on console every 10,000 INS executions
@@ -240,18 +240,19 @@ for i = 2:LI
     dti = imu.t(i) - imu.t(i-1);
     
     % Turn-rates update
-    omega_ie_n = earth_rate(lat_e(i-1));
-    omega_en_n = transport_rate(lat_e(i-1), vel_e(i-1,1), vel_e(i-1,2), h_e(i-1));
+    omega_ie_n = earth_rate(lat_e(i-1)); %3x1
+    omega_en_n = transport_rate(lat_e(i-1), vel_e(i-1,1), vel_e(i-1,2), h_e(i-1)); %3x1
     
     % Gravity update
     gn_e(i,:) = gravity(lat_e(i-1), h_e(i-1));
     
     % Inertial sensors corrected with a posteriori KF biases estimation and
     % deterministic static biases
-    wb_corrected = imu.wb(i,:)' - gb_dyn - imu.gb_sta';
-    fb_corrected = imu.fb(i,:)' - ab_dyn - imu.ab_sta';
-    fn = DCMbn * fb_corrected;
-    wn = DCMbn * wb_corrected;
+    wb_corrected = imu.wb(i,:)' - gb_dyn - imu.gb_sta';  % 3x1
+    fb_corrected = imu.fb(i,:)' - ab_dyn - imu.ab_sta';  % 3x1
+
+    fn = DCMbn * fb_corrected; % 3x1
+    wn = DCMbn * wb_corrected; % 3x1
     
     % Attitude update
     [qua, DCMbn, euler] = att_update(wb_corrected, DCMbn, qua, ...
@@ -261,7 +262,7 @@ for i = 2:LI
     yaw_e(i)  = euler(3);
     
     % Velocity update
-    vel = vel_update(fn, vel_e(i-1,:), omega_ie_n, omega_en_n, gn_e(i,:)', dti);
+    vel = vel_update(fn, vel_e(i-1,:), omega_ie_n, omega_en_n, gn_e(i,:)', dti); % 1x3
     vel_e (i,:) = vel;
     
     % Position update
@@ -280,22 +281,27 @@ for i = 2:LI
     if ( i > idz )
         
         % Mean velocity value for the ZUPT window time
-        vel_m = mean (vel_e(i-idz:i , :));
+        
+        
+        % Note: the i-th sample take the mean of idz samples in front of it, so
+        % we should edit `i-idz:i` - >  i-idz:i-1
+
+        vel_m = mean (vel_e(i-idz:i-1 , :));
         
         % If mean velocity value is under the ZUPT threshold velocity...
-        if (abs(vel_m) < gnss.zupt_th)
+        if (abs(vel_m) < gnss.zupt_th) % vel_m  all 3 elements is ok, not mean all elements
             
             % Current attitude is equal to the mean of previous attitudes
             % inside the ZUPT window time
-            roll_e(i)  = mean (roll_e(i-idz:i , :));
-            pitch_e(i) = mean (pitch_e(i-idz:i , :));
-            yaw_e(i)   = mean (yaw_e(i-idz:i , :));
+            roll_e(i)  = mean (roll_e(i-idz:i-1 , :));
+            pitch_e(i) = mean (pitch_e(i-idz:i-1 , :));
+            yaw_e(i)   = mean (yaw_e(i-idz:i-1 , :));
             
             % Current position is equal to the mean of previous positions
             % inside the ZUPT window time
-            lat_e(i) = mean (lat_e(i-idz:i , :));
-            lon_e(i) = mean (lon_e(i-idz:i , :));
-            h_e(i)   = mean (h_e(i-idz:i , :));
+            lat_e(i) = mean (lat_e(i-idz:i-1 , :));
+            lon_e(i) = mean (lon_e(i-idz:i-1 , :));
+            h_e(i)   = mean (h_e(i-idz:i-1 , :));
             
             % Alternative attitude ZUPT correction
             % roll_e(i)  = (roll_e(i-idz , :));
@@ -315,8 +321,9 @@ for i = 2:LI
     
     % Check if there is a new GNSS measurement to process at current INS time
     gdx =  find (gnss.t >= (imu.t(i) - gnss.eps) & gnss.t < (imu.t(i) + gnss.eps));
-    
+
     if ( ~isempty(gdx) && gdx > 1)
+        % fprintf('gdx index is not empty');
         
         %                 gdx   % DEBUG
         
@@ -333,7 +340,7 @@ for i = 2:LI
             + (DCMbn * gnss.larm);
         
         % Velocity innovations with lever arm correction
-        zv = (vel_e(i,:) - gnss.vel(gdx,:) - ((omega_ie_n + omega_en_n) * (DCMbn * gnss.larm ))' ...
+        zv = (vel_e(i,:) - gnss.vel(gdx,:) - (skewm(omega_ie_n + omega_en_n) * (DCMbn * gnss.larm ))' ...
             + (DCMbn * skewm(wb_corrected) * gnss.larm )' )';
         
         %% KALMAN FILTER
@@ -365,20 +372,18 @@ for i = 2:LI
         
         %% OBSERVABILITY
         
-        % Number the observable states at current GNSS time
-        ob(gdx) = rank(obsv(kf.F, kf.H));
+        % Number of the observable states at current GNSS time
+        % ob(gdx) = rank(obsv(kf.F, kf.H));
+        ob(gdx) = rank(myobsv(kf.F, kf.H));
         
         %% INS/GNSS CORRECTIONS
         
-        % Quaternion correction
-        qua_skew = -skewm(qua(1:3));    % According to Crassidis, qua_skew should be 
-                                        % positive, but if positive NaveGo diverges.   
-        % Crassidis A.174a
-        Xi = [qua(4)*eye(3) + qua_skew; -qua(1:3)'];
-		
-        % Crassidis. Eq. 7.34
-        qua = qua + 0.5 .* Xi * kf.xp(1:3);
-        qua = qua / norm(qua);          % Brute-force normalization
+        % Quaternion corrections
+        % Crassidis. Eq. 7.34 and A.174a.
+        %antm = [0.0 qua(3) -qua(2); -qua(3) 0.0 qua(1); qua(2) -qua(1) 0.0];
+        antm  = skewm([qua(1) qua(2) qua(3)]); % two equals is not equivalent( sign difference)
+        qua = qua + 0.5 .* [qua(4)*eye(3) + antm; -1.*[qua(1) qua(2) qua(3)]] * kf.xp(1:3);
+        qua = qua / norm(qua);       % Brute-force normalization
         
         % DCM correction
         DCMbn = qua2dcm(qua);
